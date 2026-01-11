@@ -1,5 +1,5 @@
 /* ======================
-   SERVER CJS GEMINI AI
+   GEMINI AI SERVER CJS - SAFE
 ====================== */
 
 const express = require("express");
@@ -11,26 +11,35 @@ const fetch = (...args) =>
 
 const app = express();
 
-// ====================== MIDDLEWARE ======================
+/* ======================
+   MIDDLEWARE
+====================== */
 app.use(cors());
 app.use(express.json());
 
-// ====================== PORT ======================
+/* ======================
+   PORT
+====================== */
 const PORT = process.env.PORT || 3000;
 
-// ====================== GEMINI KEY ======================
+/* ======================
+   GEMINI KEY
+====================== */
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
 if (!GEMINI_API_KEY) {
   console.error("❌ Chưa thiết lập GEMINI_API_KEY trên server/Render");
 }
 
-// ====================== TEST ROOT ======================
+/* ======================
+   ROOT TEST
+====================== */
 app.get("/", (req, res) => {
   res.send("✅ GEMINI AI SERVER is running");
 });
 
-// ====================== POST /chat ======================
+/* ======================
+   POST /chat
+====================== */
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -44,23 +53,36 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "❌ Chưa có Gemini API KEY" });
     }
 
-    // ====================== GỌI GEMINI ======================
-    const response = await fetch(
-      "https://gemini.googleapis.com/v1/generateText", // sửa theo docs Gemini
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GEMINI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          prompt: userMessage,
-          model: "gemini-1.5", // chỉnh theo model cậu muốn
-        }),
-      }
-    );
+    // ======================
+    // GỌI GEMINI
+    // ======================
+    const url = "https://gemini.googleapis.com/v1/generateText"; // sửa theo docs Gemini
+    const body = {
+      prompt: userMessage,
+      model: "gemini-1.5", // chỉnh theo model cậu muốn
+    };
 
-    const data = await response.json();
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GEMINI_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const text = await response.text(); // đọc raw text
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("❌ KHÔNG PHẢI JSON:", text);
+      return res.json({
+        reply:
+          "❌ Lỗi API: Không nhận được JSON hợp lệ từ Gemini. Đây là fallback text.",
+      });
+    }
 
     if (response.status !== 200) {
       console.error("❌ GEMINI ERROR:", data);
@@ -70,7 +92,6 @@ app.post("/chat", async (req, res) => {
     }
 
     const aiReply = data?.text || "AI không trả lời";
-
     console.log("AI REPLY:", aiReply);
 
     return res.json({ reply: aiReply });
@@ -80,7 +101,9 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// ====================== START SERVER ======================
+/* ======================
+   START SERVER
+====================== */
 app.listen(PORT, () => {
   console.log(`✅ GEMINI AI SERVER chạy cổng ${PORT}`);
 });
