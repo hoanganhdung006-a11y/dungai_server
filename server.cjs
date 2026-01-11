@@ -1,29 +1,47 @@
+/* ======================
+   SERVER CJS CHUẨN
+====================== */
+
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
+
+// Node.js trước v18 không có fetch → dùng node-fetch
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 
-/* ======================
-   CONFIG
-====================== */
-const PORT = 3000;
-const OPENAI_API_KEY = "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";
-
-/* ======================
-   MIDDLEWARE
-====================== */
+// ====================== MIDDLEWARE ======================
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // parse JSON body
 
-/* ======================
-   CHAT API
-====================== */
+// ====================== PORT ======================
+const PORT = process.env.PORT || 3000;
+
+// ====================== TEST ROOT ======================
+app.get("/", (req, res) => {
+  res.send("✅ AI SERVER is running");
+});
+
+// ====================== POST CHAT ======================
 app.post("/chat", async (req, res) => {
-  const { message } = req.body;
-  console.log("DATA NHẬN:", req.body);
-
   try {
+    const userMessage = req.body.message;
+    console.log("DATA NHẬN:", req.body);
+
+    if (!userMessage) {
+      return res.json({ reply: "❌ Không có tin nhắn gửi lên" });
+    }
+
+    // ====================== TRẢ CỨNG TEST ======================
+    // Khi frontend nhận được dòng này là server + JS hoạt động bình thường
+    return res.json({
+      reply: "Server đã nhận: " + userMessage
+    });
+
+    // ====================== CÓ THỂ GẮN OPENAI ======================
+    /*
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -31,30 +49,24 @@ app.post("/chat", async (req, res) => {
         "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Bạn là Dũng AI, nói tiếng Việt." },
-          { role: "user", content: message }
-        ]
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: userMessage }]
       })
     });
 
     const data = await response.json();
+    const aiReply = data.choices?.[0]?.message?.content || "AI không trả lời";
 
-    const reply =
-      data.choices?.[0]?.message?.content || "AI không phản hồi";
-
-    res.json({ reply });
+    return res.json({ reply: aiReply });
+    */
 
   } catch (err) {
     console.error("LỖI SERVER:", err);
-    res.status(500).json({ reply: "Lỗi AI server" });
+    return res.status(500).json({ reply: "❌ Lỗi server" });
   }
 });
 
-/* ======================
-   START SERVER
-====================== */
+// ====================== START SERVER ======================
 app.listen(PORT, () => {
-  console.log("✅ AI SERVER chạy cổng " + PORT);
+  console.log("✅ AI SERVER chạy cổng", PORT);
 });
