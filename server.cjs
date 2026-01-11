@@ -1,18 +1,18 @@
 /* ======================
-   SERVER CJS HOÀN CHỈNH
+   SERVER CJS HOÀN CHỈNH VỚI OPENAI
 ====================== */
 
 const express = require("express");
 const cors = require("cors");
 
-// Node.js trước v18 không có fetch → dùng node-fetch
+// Node < 18 thì dùng node-fetch
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 
 // ====================== MIDDLEWARE ======================
-app.use(cors()); // cho phép mọi nguồn truy cập
+app.use(cors()); // cho phép tất cả nguồn
 app.use(express.json()); // parse JSON body
 
 // ====================== PORT ======================
@@ -33,12 +33,14 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "❌ Không có tin nhắn gửi lên" });
     }
 
-    // ====================== GỌI OPENAI ======================
+    // ====================== CHECK OPENAI API KEY ======================
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     if (!OPENAI_API_KEY) {
-      return res.json({ reply: "❌ Chưa đặt OPENAI_API_KEY" });
+      console.error("❌ Chưa thiết lập OPENAI_API_KEY");
+      return res.json({ reply: "❌ Chưa thiết lập OPENAI_API_KEY" });
     }
 
+    // ====================== GỌI OPENAI ======================
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -52,8 +54,9 @@ app.post("/chat", async (req, res) => {
     });
 
     const data = await response.json();
-    const aiReply = data.choices?.[0]?.message?.content || "AI không trả lời";
+    console.log("OPENAI RESPONSE:", data); // log để debug
 
+    const aiReply = data?.choices?.[0]?.message?.content?.trim() || "AI không trả lời";
     return res.json({ reply: aiReply });
 
   } catch (err) {
