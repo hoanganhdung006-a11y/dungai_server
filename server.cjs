@@ -1,5 +1,5 @@
 /* ======================
-   SERVER CJS CHUẨN
+   SERVER CJS HOÀN CHỈNH
 ====================== */
 
 const express = require("express");
@@ -12,7 +12,7 @@ const fetch = (...args) =>
 const app = express();
 
 // ====================== MIDDLEWARE ======================
-app.use(cors());
+app.use(cors()); // cho phép mọi nguồn truy cập
 app.use(express.json()); // parse JSON body
 
 // ====================== PORT ======================
@@ -33,15 +33,12 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "❌ Không có tin nhắn gửi lên" });
     }
 
-    // ====================== TRẢ CỨNG TEST ======================
-    // Khi frontend nhận được dòng này là server + JS hoạt động bình thường
-    return res.json({
-      reply: "Server đã nhận: " + userMessage
-    });
-
-    // ====================== CÓ THỂ GẮN OPENAI ======================
-    /*
+    // ====================== GỌI OPENAI ======================
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.json({ reply: "❌ Chưa đặt OPENAI_API_KEY" });
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -58,7 +55,6 @@ app.post("/chat", async (req, res) => {
     const aiReply = data.choices?.[0]?.message?.content || "AI không trả lời";
 
     return res.json({ reply: aiReply });
-    */
 
   } catch (err) {
     console.error("LỖI SERVER:", err);
