@@ -19,14 +19,12 @@ app.use(express.json()); // Parse JSON body
 const PORT = process.env.PORT || 3000;
 
 // ====================== OPENAI KEY ======================
-// Lấy từ Render, có thể tên là OPEN_API_KEY hoặc OPENAI_API_KEY
+// Render có thể tự đặt tên biến là OPEN_API_KEY
 const OPENAI_API_KEY =
   process.env.OPENAI_API_KEY || process.env.OPEN_API_KEY;
 
 if (!OPENAI_API_KEY) {
-  console.error(
-    "❌ Chưa thiết lập OPENAI_API_KEY hoặc OPEN_API_KEY trên Render"
-  );
+  console.error("❌ Chưa thiết lập OPENAI_API_KEY hoặc OPEN_API_KEY trên Render");
 }
 
 // ====================== TEST ROOT ======================
@@ -89,9 +87,4 @@ app.post("/chat", async (req, res) => {
 // ====================== START SERVER ======================
 app.listen(PORT, () => {
   console.log(`✅ AI SERVER chạy cổng ${PORT}`);
-  console.log(
-    `📌 Test nhanh: curl -X POST http://localhost:${PORT}/chat -H "Content-Type: application/json" -d '{"message":"alo"}'`
-  );
-  console.log(
-    "🛠 Debug env keys:",
-    "OPEN
+});
