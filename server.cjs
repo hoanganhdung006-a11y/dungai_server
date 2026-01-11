@@ -1,5 +1,5 @@
 /* ======================
-   SERVER CJS HOÀN CHỈNH VỚI OPENAI
+   SERVER CJS OPENAI HOÀN CHỈNH
 ====================== */
 
 const express = require("express");
@@ -12,18 +12,21 @@ const fetch = (...args) =>
 const app = express();
 
 // ====================== MIDDLEWARE ======================
-app.use(cors()); // cho phép tất cả nguồn
-app.use(express.json()); // parse JSON body
+app.use(cors()); // Cho phép tất cả nguồn
+app.use(express.json()); // Parse JSON body
 
 // ====================== PORT ======================
 const PORT = process.env.PORT || 3000;
+
+// ====================== OPENAI KEY ======================
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // ====================== TEST ROOT ======================
 app.get("/", (req, res) => {
   res.send("✅ AI SERVER is running");
 });
 
-// ====================== POST CHAT ======================
+// ====================== POST /chat ======================
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -33,32 +36,42 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "❌ Không có tin nhắn gửi lên" });
     }
 
-    // ====================== CHECK OPENAI API KEY ======================
-    const OPEN_API_KEY = process.env.OPEN_API_KEY;
-    if (!OPEN_API_KEY) {
-      console.error("❌ Chưa thiết lập OPEN_API_KEY");
-      return res.json({ reply: "❌ Chưa thiết lập OPEN_API_KEY" });
+    if (!OPENAI_API_KEY) {
+      console.error("❌ Chưa thiết lập OPENAI_API_KEY");
+      return res.json({ reply: "❌ Chưa thiết lập OPENAI_API_KEY" });
     }
 
     // ====================== GỌI OPENAI ======================
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: userMessage }]
-      })
-    });
+    const response = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: userMessage }],
+        }),
+      }
+    );
 
     const data = await response.json();
-    console.log("OPENAI RESPONSE:", data); // log để debug
 
-    const aiReply = data?.choices?.[0]?.message?.content?.trim() || "AI không trả lời";
+    if (response.status !== 200) {
+      console.error("❌ OPENAI ERROR:", data);
+      return res.json({
+        reply: `❌ OPENAI ERROR: ${data.error?.message || "Unknown error"}`,
+      });
+    }
+
+    const aiReply =
+      data?.choices?.[0]?.message?.content?.trim() || "AI không trả lời";
+
+    console.log("AI REPLY:", aiReply);
+
     return res.json({ reply: aiReply });
-
   } catch (err) {
     console.error("LỖI SERVER:", err);
     return res.status(500).json({ reply: "❌ Lỗi server" });
@@ -67,7 +80,8 @@ app.post("/chat", async (req, res) => {
 
 // ====================== START SERVER ======================
 app.listen(PORT, () => {
-  console.log("✅ AI SERVER chạy cổng", PORT);
+  console.log(`✅ AI SERVER chạy cổng ${PORT}`);
+  console.log(
+    `📌 Test nhanh: curl -X POST http://localhost:${PORT}/chat -H "Content-Type: application/json" -d '{"message":"alo"}'`
+  );
 });
-
-
