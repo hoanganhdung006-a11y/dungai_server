@@ -1,11 +1,11 @@
 /* ======================
-   SERVER CJS OPENAI HOÀN CHỈNH
+   SERVER CJS RENDER-READY
 ====================== */
 
 const express = require("express");
 const cors = require("cors");
 
-// Node < 18 thì dùng node-fetch
+// Nếu Node <18 thì dùng node-fetch
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
@@ -19,7 +19,15 @@ app.use(express.json()); // Parse JSON body
 const PORT = process.env.PORT || 3000;
 
 // ====================== OPENAI KEY ======================
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// Lấy từ Render, có thể tên là OPEN_API_KEY hoặc OPENAI_API_KEY
+const OPENAI_API_KEY =
+  process.env.OPENAI_API_KEY || process.env.OPEN_API_KEY;
+
+if (!OPENAI_API_KEY) {
+  console.error(
+    "❌ Chưa thiết lập OPENAI_API_KEY hoặc OPEN_API_KEY trên Render"
+  );
+}
 
 // ====================== TEST ROOT ======================
 app.get("/", (req, res) => {
@@ -37,8 +45,8 @@ app.post("/chat", async (req, res) => {
     }
 
     if (!OPENAI_API_KEY) {
-      console.error("❌ Chưa thiết lập OPENAI_API_KEY");
-      return res.json({ reply: "❌ Chưa thiết lập OPENAI_API_KEY" });
+      console.error("❌ OPENAI API KEY chưa có");
+      return res.json({ reply: "❌ Chưa thiết lập API KEY" });
     }
 
     // ====================== GỌI OPENAI ======================
@@ -84,4 +92,6 @@ app.listen(PORT, () => {
   console.log(
     `📌 Test nhanh: curl -X POST http://localhost:${PORT}/chat -H "Content-Type: application/json" -d '{"message":"alo"}'`
   );
-});
+  console.log(
+    "🛠 Debug env keys:",
+    "OPEN
