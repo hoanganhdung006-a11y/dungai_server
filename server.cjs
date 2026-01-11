@@ -34,10 +34,10 @@ app.post("/chat", async (req, res) => {
     }
 
     // ====================== CHECK OPENAI API KEY ======================
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const OPENAI_API_KEY = process.env.OPEN_API_KEY;
     if (!OPENAI_API_KEY) {
-      console.error("❌ Chưa thiết lập OPENAI_API_KEY");
-      return res.json({ reply: "❌ Chưa thiết lập OPENAI_API_KEY" });
+      console.error("❌ Chưa thiết lập OPEN_API_KEY");
+      return res.json({ reply: "❌ Chưa thiết lập OPEN_API_KEY" });
     }
 
     // ====================== GỌI OPENAI ======================
@@ -69,3 +69,4 @@ app.post("/chat", async (req, res) => {
 app.listen(PORT, () => {
   console.log("✅ AI SERVER chạy cổng", PORT);
 });
+
