@@ -1,5 +1,5 @@
 /* ======================
-   GEMINI AI SERVER CJS - SAFE
+   GEMINI AI SERVER - HTML -> JSON
 ====================== */
 
 const express = require("express");
@@ -26,78 +26,52 @@ const PORT = process.env.PORT || 3000;
    GEMINI KEY
 ====================== */
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  console.error("❌ Chưa thiết lập GEMINI_API_KEY trên server/Render");
-}
+if (!GEMINI_API_KEY) console.error("❌ Chưa thiết lập GEMINI_API_KEY");
 
 /* ======================
-   ROOT TEST
+   ROOT
 ====================== */
-app.get("/", (req, res) => {
-  res.send("✅ GEMINI AI SERVER is running");
-});
+app.get("/", (req, res) => res.send("✅ GEMINI AI SERVER is running"));
 
 /* ======================
-   POST /chat
+   CHAT
 ====================== */
 app.post("/chat", async (req, res) => {
+  const userMessage = req.body.message || "";
+  console.log("DATA NHẬN:", req.body);
+
+  if (!userMessage) return res.json({ reply: "❌ Không có tin nhắn gửi lên" });
+  if (!GEMINI_API_KEY) return res.json({ reply: "❌ Chưa có Gemini API KEY" });
+
   try {
-    const userMessage = req.body.message;
-    console.log("DATA NHẬN:", req.body);
+    const response = await fetch(
+      "https://gemini.googleapis.com/v1/html-endpoint", // đổi theo docs Gemini
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${GEMINI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: userMessage, model: "gemini-1.5" }),
+      }
+    );
 
-    if (!userMessage) {
-      return res.json({ reply: "❌ Không có tin nhắn gửi lên" });
-    }
+    const html = await response.text(); // đọc raw HTML
 
-    if (!GEMINI_API_KEY) {
-      return res.json({ reply: "❌ Chưa có Gemini API KEY" });
-    }
+    // parse text đơn giản từ HTML
+    let reply = "AI không trả lời";
 
-    // ======================
-    // GỌI GEMINI
-    // ======================
-    const url = "https://gemini.googleapis.com/v1/generateText"; // sửa theo docs Gemini
-    const body = {
-      prompt: userMessage,
-      model: "gemini-1.5", // chỉnh theo model cậu muốn
-    };
+    // ví dụ lấy text trong <p>
+    const match = html.match(/<p>(.*?)<\/p>/s);
+    if (match) reply = match[1].trim();
+    else reply = html.replace(/<[^>]+>/g, "").trim(); // fallback: remove all tags
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GEMINI_API_KEY}`,
-      },
-      body: JSON.stringify(body),
-    });
+    console.log("AI REPLY PARSED:", reply);
+    return res.json({ reply });
 
-    const text = await response.text(); // đọc raw text
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      console.error("❌ KHÔNG PHẢI JSON:", text);
-      return res.json({
-        reply:
-          "❌ Lỗi API: Không nhận được JSON hợp lệ từ Gemini. Đây là fallback text.",
-      });
-    }
-
-    if (response.status !== 200) {
-      console.error("❌ GEMINI ERROR:", data);
-      return res.json({
-        reply: `❌ GEMINI ERROR: ${data.error?.message || "Unknown error"}`,
-      });
-    }
-
-    const aiReply = data?.text || "AI không trả lời";
-    console.log("AI REPLY:", aiReply);
-
-    return res.json({ reply: aiReply });
   } catch (err) {
-    console.error("LỖI SERVER:", err);
-    return res.status(500).json({ reply: "❌ Lỗi server" });
+    console.error("❌ LỖI SERVER:", err);
+    return res.status(500).json({ reply: "❌ Lỗi server khi gọi Gemini" });
   }
 });
 
