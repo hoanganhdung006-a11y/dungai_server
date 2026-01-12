@@ -36,7 +36,7 @@ app.get("/", (req, res) => res.send("✅ GEMINI AI SERVER is running"));
 /* ======================
    CHAT
 ====================== */
-app.post("/chat", async (req, res) => {
+app.post("https://dungai-server.onrender.com/chat", async (req, res) => {
   const userMessage = req.body.message || "";
   console.log("DATA NHẬN:", req.body);
 
@@ -81,3 +81,4 @@ app.post("/chat", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ GEMINI AI SERVER chạy cổng ${PORT}`);
 });
+
